@@ -1,0 +1,158 @@
+---
+title: "Assignment_5"
+author: "Ritesh Penumatsa"
+output: 
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+    latex_engine: pdflatex
+date: "2024-02-24"
+---
+
+Student ID: rp37458
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, include = TRUE, warning=FALSE,message=FALSE)
+library(mosaic)
+library(ggplot2)
+```
+
+# Question 1
+
+```{r}
+Iron_Bank_Conspiracy <- do(100000) * nflip(2021, prob = 0.024)
+
+data <- data.frame(nflip = Iron_Bank_Conspiracy)
+
+ggplot(data) + 
+  geom_histogram(aes(x = nflip), binwidth = 1) +
+  labs(title = "Violating Laws Frequency", x = "Violate Laws", y = "Frequency")
+```
+
+```{r}
+sum(Iron_Bank_Conspiracy >= 70)/100000
+
+```
+
+The null hypothesis is Iron Bank not violating federal "insider trading" laws.
+We measured to p-value to measure evidence against the null-hypothesis. We
+got a p-value of 0.002 and assuming the significance level of finding an
+anomaly is 0.05. We do have convincing evidence Iron Banks is violating federal laws. It could still be an anomaly as 214 trades of Iron Bank was flagged out of
+the total 100000 trades but I highly doubt it. 
+
+# Question 2
+
+```{r}
+HD_Inspection <- do(100000) * nflip(50, prob=0.03)
+ggplot(HD_Inspection) + geom_histogram(aes(nflip), binwidth = 1) + 
+  labs(title = "Health Inspection Frequency", x = "Health Code Violations",
+       y = "Count")
+                                                                        
+```
+
+```{r}
+sum(HD_Inspection>=8)/100000
+```
+
+The null hypothesis is Gourmet Bites does not have higher than normal health code violation reports. When finding the probability of 8 or more inspection given the null hypothesis is true is 11*10^-5. Only 11 out of the total 100000 health inspections had more than 8 violation being reported. We have strong evidence 
+Gourmet Bites has higher than normal health code reports. A p-value this low 
+mean getting 8 violations or more would almost never happen. 
+
+# Question 3
+
+## Part A: Reference Distribution
+
+```{r}
+# Load sentences from the file
+sentences <- readLines("brown_sentences.txt")
+
+# Define a function to compute chi-squared value for each sentence
+chi_squared_values <- sapply(sentences, function(sentence) {
+  sentence <- gsub("[^A-Za-z]", "", sentence)  # Remove non-letter characters
+  sentence <- toupper(sentence)  # Convert text to uppercase
+  
+  # Initialize observed letter frequencies with zeros for all letters of the alphabet
+  observed_counts <- rep(0, 26)
+  
+  # Compute observed letter frequencies
+  observed_letters <- strsplit(sentence, "")[[1]]
+  
+  for (letter in observed_letters) {
+    if (letter %in% LETTERS) {
+      observed_counts[which(LETTERS == letter)] <- observed_counts[which(LETTERS == letter)] + 1
+    }
+  }
+    # Define expected letter frequencies
+  expected_counts <- c(0.08167, 0.01492, 0.02782, 0.04253, 0.12702, 0.02228, 0.02015, 0.06094, 0.06966, 0.00153, 
+                       0.00772, 0.04025, 0.02406, 0.06749, 0.07507, 0.01929, 0.00095, 0.05987, 0.06327, 0.09056, 
+                       0.02758, 0.00978, 0.02360, 0.00150, 0.01974, 0.00074)
+  
+  # Ensure expected counts match the length of the alphabet (26)
+  expected_counts <- expected_counts * sum(observed_counts)
+  
+  # Compute chi-squared value
+  chi_squared <- sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared)
+})
+
+# Print the computed chi-squared values
+print(chi_squared_values)
+
+
+```
+
+The output produced above represents the range of chi-squared values you might expect to see in normal English sentences based on the predefined letter
+frequency distribution. Chi-square is the sum of the difference of observed and predicted counts squared then divided by the predicted count.
+
+## Part B: Finding Watermark
+
+```{r}
+# Define the sentences
+sentences <- c("She opened the book and started to read the first chapter, eagerly anticipating what might come next.", "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.", "The museum’s new exhibit features ancient artifacts from various civilizations around the world.", "He carefully examined the document, looking for any clues that might help solve the mystery.", "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.", "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.", "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.", "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.", "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.", "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations.")
+
+# Compute chi-squared values for each sentence
+chi_squared_values <- sapply(sentences, function(sentence) {
+  # Preprocess the sentence
+  sentence <- gsub("[^A-Za-z]", "", sentence)
+  sentence <- toupper(sentence)
+  
+  observed_counts <- rep(0, 26)
+  
+  # Compute observed letter frequencies
+  observed_letters <- strsplit(sentence, "")[[1]]
+  observed_letters <- observed_letters[observed_letters %in% LETTERS]
+  observed_counts <- table(factor(observed_letters, levels = LETTERS))
+  
+  # Define expected letter frequencies
+  expected_counts <- c(0.08167, 0.01492, 0.02782, 0.04253, 0.12702, 0.02228, 0.02015, 0.06094, 0.06966, 0.00153, 
+                       0.00772, 0.04025, 0.02406, 0.06749, 0.07507, 0.01929, 0.00095, 0.05987, 0.06327, 0.09056, 
+                       0.02758, 0.00978, 0.02360, 0.00150, 0.01974, 0.00074)
+  
+  # Ensure expected counts match the length of the alphabet (26)
+  expected_counts <- expected_counts * sum(observed_counts)
+  
+  # Compute the chi-squared value
+  chi_squared <- sum((observed_counts - expected_counts)^2 / expected_counts)
+  
+  return(chi_squared)
+})
+
+# Calculate p-values based on the null distribution
+p_values <- sapply(chi_squared_values, function(chi_squared_value) {
+  sum(chi_squared_values >= chi_squared_value) / length(chi_squared_values)
+})
+
+# Create a table of p-values
+p_value_table <- data.frame(Sentence = sentences, P_Value = round(p_values, 3))
+
+# Print the table
+print(p_value_table)
+
+```
+
+Here is a table displaying 10 sentences in a sample text file and displaying the p-value for each one. We know from the previous example the chi-square for each of these sentences so we calculating the sum of chi-squares values more extreme than the origional chi-square value divided by number of chi-square values to get the p-values for each of the 10 sentences.
+
+The sentence "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland." is produced by LLM most likely to be watermarked. The p-value of this sentence is less than the other sentences meaning it has the greatest chance of the sentence being statisitically significant from the null hypothesis.
